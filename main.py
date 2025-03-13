@@ -18,7 +18,7 @@ class Game:
         self.screen = pygame.display.set_mode(
             (self.window_width, self.window_height)
         )
-        self.scene = MenuScene(self, 'новая игра')
+        self.scene = MenuScene(self, 'Арканоид')
         self.keys_pressed = None
         self.is_running = True
         self.clock = pygame.time.Clock()

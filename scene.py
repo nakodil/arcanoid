@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import math
 import config
 from ball import Ball
-from racket import RacketManual, RacketAuto
+from racket import RacketManual
 from hud import Hud
 from block import Block
 
@@ -40,7 +40,7 @@ class Scene(ABC):
 
 class GameplayScene(Scene):
     '''Сцена игрового процесса'''
-    def __init__(self, game, mode: str):
+    def __init__(self, game):
         super().__init__(game)
         self.all_rackets = pygame.sprite.Group()
         racket_center = (
@@ -48,19 +48,12 @@ class GameplayScene(Scene):
             int(self.game.window_height * 0.9),
         )
 
-        if mode == 'human':
-            self.racket = RacketManual(
-                racket_center,
-                pygame.K_a,
-                pygame.K_d,
-                self
-            )
-        else:
-            self.racket = RacketAuto(
-                racket_center,
-                self,
-                20
-            )
+        self.racket = RacketManual(
+            racket_center,
+            pygame.K_a,
+            pygame.K_d,
+            self
+        )
 
         self.ball = Ball(self)
 
@@ -138,17 +131,14 @@ class MenuScene(Scene):
             self,
             self.font_size,
             title,
-            '1 - человек',
-            '2 - компьютер',
+            'ENTER - новая игра',
             'ESC - выход',
         )
 
     def handle_events(self):
         super().handle_events()
-        if self.keys_pressed[pygame.K_1]:
-            self.game.scene = GameplayScene(self.game, 'human')
-        elif self.keys_pressed[pygame.K_2]:
-            self.game.scene = GameplayScene(self.game, 'pc')
+        if self.keys_pressed[pygame.K_RETURN]:
+            self.game.scene = GameplayScene(self.game)
 
     def render(self):
         self.game.screen.fill(config.BLACK)

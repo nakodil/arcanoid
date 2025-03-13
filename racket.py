@@ -47,21 +47,6 @@ class Racket(ABC, pygame.sprite.Sprite):
         self.collide_borders()
 
 
-class RacketAuto(Racket):
-    def __init__(self, center, scene, delay):
-        super().__init__(center, scene)
-        self.delay = delay  # ms
-        self.last_move = pygame.time.get_ticks()  # ms
-
-    def move(self):
-        if pygame.time.get_ticks() - self.last_move >= self.delay:
-            if self.scene.ball.rect.centery < self.rect.centery:
-                self.rect.centery -= self.speed
-            elif self.scene.ball.rect.centery > self.rect.centery:
-                self.rect.centery += self.speed
-            self.last_move = pygame.time.get_ticks()
-
-
 class RacketManual(Racket):
     def __init__(self, center, key_left, key_right, scene):
         super().__init__(center, scene)
