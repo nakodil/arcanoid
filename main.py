@@ -1,6 +1,6 @@
 # Звуки с https://sfxr.me/
 import pygame
-from sound_device_test import is_sound
+import sound_device_test
 import config
 from scene import MenuScene
 
@@ -11,13 +11,13 @@ class Game:
         pygame.display.init()
         pygame.font.init()
 
-        if is_sound():
+        self.is_sound = sound_device_test.is_sound()
+        if self.is_sound:
             pygame.mixer.init()
-            self.is_sound = True
-        else:
-            self.is_sound = False
 
-        display_info = pygame.display.Info()  # FIXME: использовать главный дисплей, если их несколько
+        # FIXME: использовать главный дисплей, если их несколько
+        display_info = pygame.display.Info()
+
         self.window_width = display_info.current_w
         self.window_height = display_info.current_h
         self.font_size = int(

@@ -158,6 +158,7 @@ class MenuLines:
             menu_line = TextLine(line, (x, y), font_size)
             scene.all_sprites.add(menu_line)
 
+
 class TextLine(pygame.sprite.Sprite):
     def __init__(self, text_line: str, coords: tuple, font_size):
         super().__init__()

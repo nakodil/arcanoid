@@ -4,6 +4,7 @@ import math
 
 
 class Ball(pygame.sprite.Sprite):
+    '''Мяч'''
     def __init__(self, scene, is_sound):
         super().__init__()
         self.scene = scene
@@ -26,25 +27,34 @@ class Ball(pygame.sprite.Sprite):
         self.goto_start()
         if self.is_sound:
             self.sounds = {
-                'collide': pygame.mixer.Sound(config.SOUNDS_DIR / 'collide.wav'),
-                'lose': pygame.mixer.Sound(config.SOUNDS_DIR / 'lose.wav'),
-                'win': pygame.mixer.Sound(config.SOUNDS_DIR / 'win.wav'),
+                'collide': pygame.mixer.Sound(
+                    config.SOUNDS_DIR / 'collide.wav'
+                ),
+                'lose': pygame.mixer.Sound(
+                    config.SOUNDS_DIR / 'lose.wav'
+                ),
+                'win': pygame.mixer.Sound(
+                    config.SOUNDS_DIR / 'win.wav'
+                ),
             }
         self.scene.all_sprites.add(self)
 
-    def goto_start(self):
+    def goto_start(self) -> None:
         self.rect.midbottom = self.scene.racket.rect.midtop
         self.angle = 0
 
-    def move(self):
+    def move(self) -> None:
         self.velocity_x = math.cos(math.radians(self.angle - 90))
         self.velocity_y = math.sin(math.radians(self.angle - 90))
         self.rect.x += self.velocity_x * self.speed
         self.rect.y += self.velocity_y * self.speed
 
-    def collide_borders(self):
-        '''Столкновения с границами экрана с учетом правильного отражения'''
-        if self.rect.left < 0 or self.rect.right > self.scene.game.window_width:
+    def collide_borders(self) -> None:
+        '''Столкновения с границами экрана'''
+        if (
+            self.rect.left < 0
+            or self.rect.right > self.scene.game.window_width
+        ):
             self.angle = (360 - self.angle) % 360
             if self.is_sound:
                 self.sounds['collide'].play()
@@ -53,8 +63,15 @@ class Ball(pygame.sprite.Sprite):
             if self.is_sound:
                 self.sounds['collide'].play()
 
-    def collide_rackets(self):
-        '''Столкновения с ракетками'''
+    def collide_rackets(self) -> None:
+        '''
+        Столкновения с ракетками
+        FIXME: Неправильный отскок от ракетки,
+            мяч можно допинать до горизонтального полета. Вот правила:
+            If the ball hits the center of the paddle, it bounces straight up.
+            If it hits the left side, it bounces at an angle to the left.
+            If it hits the right side, it bounces at an angle to the right.
+        '''
         rackets_hit = pygame.sprite.spritecollide(
             self, self.scene.all_rackets, False
         )
@@ -66,7 +83,7 @@ class Ball(pygame.sprite.Sprite):
             if self.is_sound:
                 self.sounds['collide'].play()
 
-    def collide_blocks(self):
+    def collide_blocks(self) -> None:
         '''Столкновения с блоками'''
         blocks_hit = pygame.sprite.spritecollide(
             self, self.scene.all_blocks, False
@@ -78,7 +95,7 @@ class Ball(pygame.sprite.Sprite):
                 block.destroy()
             self.angle = (180 - self.angle) % 360
 
-    def update(self):
+    def update(self) -> None:
         self.move()
         self.check_lose()
         self.collide_borders()
@@ -86,7 +103,7 @@ class Ball(pygame.sprite.Sprite):
         self.collide_blocks()
 
     def check_lose(self) -> None:
-        '''Мяч ушел вниз'''
+        '''Мяч ушел за нижнюю границу экрана'''
         if self.rect.bottom <= self.scene.game.window_height:
             return
         self.hp -= 1
@@ -96,8 +113,3 @@ class Ball(pygame.sprite.Sprite):
         if self.is_sound:
             self.sounds['lose'].play()
         self.goto_start()
-
-
-if __name__ == '__main__':
-    from main import Game
-    ball = Ball(Game())
