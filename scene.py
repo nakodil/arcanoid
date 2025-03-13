@@ -13,6 +13,7 @@ class Scene(ABC):
     @abstractmethod
     def __init__(self, game):
         self.game = game
+        self.font_size = self.game.font_size
         self.keys_pressed = None
         self.all_sprites = pygame.sprite.Group()
         self.tile_size = math.gcd(
@@ -39,6 +40,7 @@ class Scene(ABC):
 
 
 class GameplayScene(Scene):
+    '''Сцена игрового процесса'''
     def __init__(self, game, mode: str):
         super().__init__(game)
         self.all_rackets = pygame.sprite.Group()
@@ -47,7 +49,6 @@ class GameplayScene(Scene):
             int(self.game.window_height * 0.9),
         )
 
-        # ракетка
         if mode == 'human':
             self.racket = RacketManual(
                 racket_center,
@@ -64,20 +65,22 @@ class GameplayScene(Scene):
 
         self.ball = Ball(self)
 
-        # табло - очки
         Hud(
-            int(self.game.window_width * 0.2),
+            int(self.game.window_width * 0.1),
             int(self.game.window_height * 0.05),
             self,
-            lambda: self.ball.score
+            lambda: self.ball.score,
+            'очки',
+            self.font_size
         )
 
-        # табло - жизни
         Hud(
-            int(self.game.window_width * 0.8),
+            int(self.game.window_width * 0.9),
             int(self.game.window_height * 0.05),
             self,
-            lambda: self.ball.hp
+            lambda: self.ball.hp,
+            'жизни',
+            self.font_size
         )
 
         self.all_blocks = pygame.sprite.Group()
@@ -128,10 +131,12 @@ class GameplayScene(Scene):
 
 
 class MenuScene(Scene):
+    '''Сцена меню'''
     def __init__(self, game, title: str):
         super().__init__(game)
         MenuLines(
             self,
+            self.font_size,
             title,
             '1 - человек',
             '2 - компьютер',
@@ -151,21 +156,22 @@ class MenuScene(Scene):
         pygame.display.flip()
 
 
-class TextLine(pygame.sprite.Sprite):
-    def __init__(self, text_line: str, coords: tuple):
-        super().__init__()
-        self.font = pygame.font.Font(None, 100)  # FIXME: magic number!
-        self.image = self.font.render(text_line, True, config.WHITE)
-        self.rect = self.image.get_rect()
-        self.rect.center = coords
-
-
 class MenuLines:
     # TODO: рисовать линии на отдельной поверхности
-    def __init__(self, scene, *lines):
+    def __init__(self, scene, font_size, title, *lines):
         x = scene.game.window_width // 2
         y = 100
-        for line in lines:
-            text_line = TextLine(line, (x, y))
-            scene.all_sprites.add(text_line)
+        title = TextLine(title, (x, y), font_size)  # заголовок меню
+        scene.all_sprites.add(title)
+        for line in lines:  # пункты меню
             y += 100  # TODO: рассчитать отступ относительно размера шрифта
+            menu_line = TextLine(line, (x, y), font_size)
+            scene.all_sprites.add(menu_line)
+
+class TextLine(pygame.sprite.Sprite):
+    def __init__(self, text_line: str, coords: tuple, font_size):
+        super().__init__()
+        self.font = pygame.font.Font(config.MENU_FONT, font_size)
+        self.image = self.font.render(text_line, True, config.MENU_COLOR)
+        self.rect = self.image.get_rect()
+        self.rect.center = coords

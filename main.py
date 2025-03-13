@@ -8,10 +8,13 @@ class Game:
     '''Игра'''
     def __init__(self) -> None:
         pygame.init()
-        pygame.mixer.init()  # зачем?
+        pygame.mixer.init()
         display_info = pygame.display.Info()
         self.window_width = display_info.current_w
         self.window_height = display_info.current_h
+        self.font_size = int(
+            min(self.window_width, self.window_height) * 0.03
+        )
         self.screen = pygame.display.set_mode(
             (self.window_width, self.window_height)
         )
@@ -22,9 +25,11 @@ class Game:
 
     def main_loop(self) -> None:
         '''
-        сбор событий
-        обновление (объектов)
-        рендер (отрисовка)
+        Главный цикл игры:
+            сбор событий
+            обновление объектов
+            рендер
+            ожидание тика FPS
         '''
         while self.is_running:
             self.scene.handle_events()
@@ -35,5 +40,4 @@ class Game:
 
 
 if __name__ == '__main__':
-    game = Game()
-    game.main_loop()
+    Game().main_loop()
