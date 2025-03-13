@@ -4,9 +4,10 @@ import math
 
 
 class Ball(pygame.sprite.Sprite):
-    def __init__(self, scene):
+    def __init__(self, scene, is_sound):
         super().__init__()
         self.scene = scene
+        self.is_sound = is_sound
         self.velocity_x = 0
         self.velocity_y = 0
         self.angle = 0
@@ -23,11 +24,12 @@ class Ball(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
         self.goto_start()
-        self.sounds = {
-            'collide': pygame.mixer.Sound(config.SOUNDS_DIR / 'collide.wav'),
-            'lose': pygame.mixer.Sound(config.SOUNDS_DIR / 'lose.wav'),
-            'win': pygame.mixer.Sound(config.SOUNDS_DIR / 'win.wav'),
-        }
+        if self.is_sound:
+            self.sounds = {
+                'collide': pygame.mixer.Sound(config.SOUNDS_DIR / 'collide.wav'),
+                'lose': pygame.mixer.Sound(config.SOUNDS_DIR / 'lose.wav'),
+                'win': pygame.mixer.Sound(config.SOUNDS_DIR / 'win.wav'),
+            }
         self.scene.all_sprites.add(self)
 
     def goto_start(self):
@@ -44,10 +46,12 @@ class Ball(pygame.sprite.Sprite):
         '''Столкновения с границами экрана с учетом правильного отражения'''
         if self.rect.left < 0 or self.rect.right > self.scene.game.window_width:
             self.angle = (360 - self.angle) % 360
-            self.sounds['collide'].play()
+            if self.is_sound:
+                self.sounds['collide'].play()
         elif self.rect.top < 0:
             self.angle = (180 - self.angle) % 360
-            self.sounds['collide'].play()
+            if self.is_sound:
+                self.sounds['collide'].play()
 
     def collide_rackets(self):
         '''Столкновения с ракетками'''
@@ -59,7 +63,8 @@ class Ball(pygame.sprite.Sprite):
             self.angle = (180 - self.angle) % 360
             self.angle += 15 * racket_hit.direction
             self.rect.bottom = racket_hit.rect.top
-            self.sounds['collide'].play()
+            if self.is_sound:
+                self.sounds['collide'].play()
 
     def collide_blocks(self):
         '''Столкновения с блоками'''
@@ -68,7 +73,8 @@ class Ball(pygame.sprite.Sprite):
         )
         if blocks_hit:
             for block in blocks_hit:
-                self.sounds['win'].play()
+                if self.is_sound:
+                    self.sounds['win'].play()
                 block.destroy()
             self.angle = (180 - self.angle) % 360
 
@@ -87,7 +93,8 @@ class Ball(pygame.sprite.Sprite):
         if self.hp <= 0:
             self.scene.loose()
         self.scene.racket.goto_start()
-        self.sounds['lose'].play()
+        if self.is_sound:
+            self.sounds['lose'].play()
         self.goto_start()
 
 

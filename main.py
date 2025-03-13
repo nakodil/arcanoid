@@ -1,5 +1,6 @@
 # Звуки с https://sfxr.me/
 import pygame
+from sound_device_test import is_sound
 import config
 from scene import MenuScene
 
@@ -7,8 +8,15 @@ from scene import MenuScene
 class Game:
     '''Игра'''
     def __init__(self) -> None:
-        pygame.init()
-        pygame.mixer.init()  # FIXME: без аудиоустройства ошибка WASAPI can't find requested audio endpoint
+        pygame.display.init()
+        pygame.font.init()
+
+        if is_sound():
+            pygame.mixer.init()
+            self.is_sound = True
+        else:
+            self.is_sound = False
+
         display_info = pygame.display.Info()  # FIXME: использовать главный дисплей, если их несколько
         self.window_width = display_info.current_w
         self.window_height = display_info.current_h

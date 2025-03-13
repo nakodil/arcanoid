@@ -55,7 +55,7 @@ class GameplayScene(Scene):
             self
         )
 
-        self.ball = Ball(self)
+        self.ball = Ball(self, self.game.is_sound)
 
         Hud(
             int(self.game.window_width * 0.1),
