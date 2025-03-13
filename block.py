@@ -1,12 +1,11 @@
 import pygame
-import config
 
 
 class Block(pygame.sprite.Sprite):
-    def __init__(self, scene, coords: tuple):
+    def __init__(self, scene, coords: tuple, color: tuple):
         super().__init__()
         self.scene = scene
-        self.color = config.BASE_BLOCK_COLOR
+        self.color = color
         self.image = pygame.Surface(
             (self.scene.tile_size, self.scene.tile_size)
         )
@@ -22,21 +21,3 @@ class Block(pygame.sprite.Sprite):
         self.kill()
         if not self.scene.all_blocks:
             self.scene.win()
-
-
-class BonusBlock(Block):
-    def __init__(self, scene, coords):
-        super().__init__(scene, coords)
-        self.color = config.BONUS_BLOCK_COLOR
-        self.image.fill(self.color)
-        self.bonus = 10
-
-
-'''
-TODO: реализовать другие типы блоков:
-    цвет
-    очки
-    поведение
-
-Выигрыш
-'''

@@ -17,7 +17,7 @@ class Racket(ABC, pygame.sprite.Sprite):
         self.speed = 10
         self.image = pygame.Surface(
             (
-                self.scene.tile_size,
+                self.scene.tile_size * 2,
                 int(self.scene.tile_size * 0.3),
             )
         )

@@ -8,8 +8,8 @@ class Game:
     '''Игра'''
     def __init__(self) -> None:
         pygame.init()
-        pygame.mixer.init()
-        display_info = pygame.display.Info()
+        pygame.mixer.init()  # FIXME: без аудиоустройства ошибка WASAPI can't find requested audio endpoint
+        display_info = pygame.display.Info()  # FIXME: использовать главный дисплей, если их несколько
         self.window_width = display_info.current_w
         self.window_height = display_info.current_h
         self.font_size = int(
@@ -40,4 +40,5 @@ class Game:
 
 
 if __name__ == '__main__':
-    Game().main_loop()
+    game = Game()
+    game.main_loop()
