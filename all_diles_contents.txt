@@ -1,0 +1,638 @@
+# Folowing code is C:\Users\Me\Desktop\python_dev\arcanoid\ball.py content:
+
+import config
+import pygame
+import math
+
+
+class Ball(pygame.sprite.Sprite):
+    '''Мяч'''
+    def __init__(self, scene, is_sound):
+        super().__init__()
+        self.scene = scene
+        self.is_sound = is_sound
+        self.velocity_x = 0
+        self.velocity_y = 0
+        self.angle = 0
+        self.color = config.GREEN
+        self.speed = 10
+        self.score = 0
+        self.hp = 3
+
+        width = int(self.scene.tile_height * 0.3)
+        height = int(self.scene.tile_height * 0.3)
+
+        self.image = pygame.Surface((width, height))
+        self.image.fill(self.color)
+        self.rect = self.image.get_rect()
+
+        self.goto_start()
+        if self.is_sound:
+            self.sounds = {
+                'collide': pygame.mixer.Sound(
+                    config.SOUNDS_DIR / 'collide.wav'
+                ),
+                'lose': pygame.mixer.Sound(
+                    config.SOUNDS_DIR / 'lose.wav'
+                ),
+                'win': pygame.mixer.Sound(
+                    config.SOUNDS_DIR / 'win.wav'
+                ),
+            }
+        self.scene.all_sprites.add(self)
+
+    def goto_start(self) -> None:
+        self.rect.midbottom = self.scene.racket.rect.midtop
+        self.angle = 0
+
+    def move(self) -> None:
+        self.velocity_x = math.cos(math.radians(self.angle - 90))
+        self.velocity_y = math.sin(math.radians(self.angle - 90))
+        self.rect.x += self.velocity_x * self.speed
+        self.rect.y += self.velocity_y * self.speed
+
+    def collide_borders(self) -> None:
+        '''Столкновения с границами экрана'''
+        if (
+            self.rect.left < 0
+            or self.rect.right > self.scene.game.window_width
+        ):
+            self.angle = (360 - self.angle) % 360
+            if self.is_sound:
+                self.sounds['collide'].play()
+        elif self.rect.top < 0:
+            self.angle = (180 - self.angle) % 360
+            if self.is_sound:
+                self.sounds['collide'].play()
+
+    def collide_rackets(self) -> None:
+        '''
+        Столкновения с ракетками:
+        мяч столкнулся с левой третью ракетки - поворачивается влево;
+        мяч столкнулся с правой третью ракетки - поворачивается вправо;
+        мяч столкнулся с центральной третью ракетки - поворачивается вверх.
+        '''
+        rackets_hit = pygame.sprite.spritecollide(
+            self, self.scene.all_rackets, False
+        )
+        if not rackets_hit:
+            return
+
+        racket_hit = rackets_hit[0]
+        collision_point = self.rect.centerx - racket_hit.rect.left
+        racket_width = racket_hit.rect.width
+        if collision_point < racket_width / 3:
+            self.angle = -30
+        elif collision_point > 2 * racket_width / 3:
+            self.angle = 30
+        else:
+            self.angle = 0
+        self.rect.bottom = racket_hit.rect.top - 1  # отлепить мяч от ракетки
+
+        if self.is_sound:
+            self.sounds['collide'].play()
+
+    def collide_blocks(self) -> None:
+        '''Столкновения с блоками'''
+        blocks_hit = pygame.sprite.spritecollide(
+            self, self.scene.all_blocks, False
+        )
+        if blocks_hit:
+            for block in blocks_hit:
+                if self.is_sound:
+                    self.sounds['win'].play()
+                block.destroy()
+            self.angle = (180 - self.angle) % 360
+
+    def update(self) -> None:
+        self.move()
+        self.check_lose()
+        self.collide_borders()
+        self.collide_rackets()
+        self.collide_blocks()
+
+    def check_lose(self) -> None:
+        '''Мяч ушел за нижнюю границу экрана'''
+        if self.rect.bottom <= self.scene.game.window_height:
+            return
+        self.hp -= 1
+        if self.hp <= 0:
+            self.scene.loose()
+        self.scene.racket.goto_start()
+        if self.is_sound:
+            self.sounds['lose'].play()
+        self.goto_start()
+
+# End of C:\Users\Me\Desktop\python_dev\arcanoid\ball.py content:
+
+# Folowing code is C:\Users\Me\Desktop\python_dev\arcanoid\block.py content:
+
+import pygame
+import random
+import config
+from drop import Drop
+
+
+class Block(pygame.sprite.Sprite):
+    def __init__(self, scene, coords: tuple, color: tuple):
+        super().__init__()
+        self.scene = scene
+        self.coords = coords
+        self.color = color
+        self.image = pygame.Surface(
+            (self.scene.tile_width, self.scene.tile_height)
+        )
+        self.image.fill(self.color)
+        self.rect = self.image.get_rect()
+        self.rect.topleft = self.coords
+        self.scene.all_sprites.add(self)
+        self.scene.all_blocks.add(self)
+        self.bonus = 1
+
+    def destroy(self):
+        self.scene.ball.score += self.bonus
+        self.kill()
+        if not self.scene.all_blocks:
+            self.scene.win()
+            return
+        if random.randint(1, 10) == 1:  # TODO: fix chance
+            Drop(self.scene, self.coords, config.DROP_COLOR)
+
+# End of C:\Users\Me\Desktop\python_dev\arcanoid\block.py content:
+
+# Folowing code is C:\Users\Me\Desktop\python_dev\arcanoid\config.py content:
+
+from pathlib import Path
+
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+YELLOW = (255, 255, 0)
+CYAN = (0, 255, 255)
+MAGENTA = (255, 0, 255)
+PINK = (255, 20, 147)
+
+BLOCK_COLORS = (
+    RED,
+    GREEN,
+    BLUE,
+    YELLOW,
+    CYAN,
+    MAGENTA,
+)
+BONUS_BLOCK_COLOR = RED
+DROP_COLOR = PINK
+
+BASE_DIR = Path(__file__).resolve().parent
+ASSETS_DIR = BASE_DIR / 'assets'
+SOUNDS_DIR = ASSETS_DIR / 'sounds'
+FONTS_DIR = ASSETS_DIR / 'fonts'
+
+MENU_FONT = FONTS_DIR / 'PressStart2P-Regular.ttf'
+MENU_COLOR = WHITE
+
+HUD_FONT = FONTS_DIR / 'PressStart2P-Regular.ttf'
+HUD_COLOR = WHITE
+
+ROWS_OF_BLOCKS = 6
+BLOCKS_IN_ROW = 21
+
+IS_DEBUG = False
+FPS = 60
+
+# End of C:\Users\Me\Desktop\python_dev\arcanoid\config.py content:
+
+# Folowing code is C:\Users\Me\Desktop\python_dev\arcanoid\drop.py content:
+
+import pygame
+
+
+class Drop(pygame.sprite.Sprite):
+    def __init__(self, scene, coords: tuple, color: tuple):
+        super().__init__()
+        self.scene = scene
+        self.color = color
+        self.image = pygame.Surface(
+            (self.scene.tile_width, self.scene.tile_height)
+        )
+        self.image.fill(self.color)
+        self.rect = self.image.get_rect()
+        self.rect.topleft = coords
+        self.scene.all_sprites.add(self)
+        self.scene.all_drops.add(self)
+        self.bonus = 10
+        self.speed = 5
+
+    def move(self):
+        self.rect.y += self.speed
+        if self.rect.bottom > self.scene.game.window_height:
+            self.kill()
+            print('drop kill')
+
+    def update(self):
+        self.move()
+        self.collide_rackets()
+
+    def collide_rackets(self):
+        rackets_hit = pygame.sprite.spritecollide(
+            self, self.scene.all_rackets, False
+        )
+        if rackets_hit:
+            self.kill()
+            self.scene.ball.score += self.bonus
+
+# End of C:\Users\Me\Desktop\python_dev\arcanoid\drop.py content:
+
+# Folowing code is C:\Users\Me\Desktop\python_dev\arcanoid\hud.py content:
+
+import pygame
+import config
+
+
+class Hud(pygame.sprite.Sprite):
+    '''Счетчик в интерфейсе'''
+    def __init__(
+            self,
+            center_x: int,
+            center_y: int,
+            scene,
+            func,
+            title: str,
+            font_size: int
+    ):
+        super().__init__()
+        self.scene = scene
+        self.center_x = center_x
+        self.center_y = center_y
+        self.func = func
+        self.title = title
+        self.font_size = font_size
+        self.color = config.HUD_COLOR
+        self.font = pygame.font.Font(
+            config.HUD_FONT,
+            self.font_size,
+        )
+        self.image = None
+        self.rect = None
+        self.scene.all_sprites.add(self)
+
+    def update(self):
+        text = f'{self.title}: {self.func()}'
+        self.image = self.font.render(text, True, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = self.center_x
+        self.rect.centery = self.center_y
+
+# End of C:\Users\Me\Desktop\python_dev\arcanoid\hud.py content:
+
+# Folowing code is C:\Users\Me\Desktop\python_dev\arcanoid\main.py content:
+
+# Звуки с https://sfbgames.itch.io/chiptone
+import pygame
+import sound_device_test
+import config
+from scene import MenuScene
+
+
+class Game:
+    '''Игра'''
+    def __init__(self) -> None:
+        pygame.display.init()
+        pygame.font.init()
+
+        self.is_sound = sound_device_test.is_sound()
+        if self.is_sound:
+            pygame.mixer.init()
+
+        # FIXME: использовать главный дисплей, если их несколько
+        display_info = pygame.display.Info()
+
+        self.window_width = display_info.current_w
+        self.window_height = display_info.current_h
+        self.font_size = int(
+            min(self.window_width, self.window_height) * 0.03
+        )
+        self.screen = pygame.display.set_mode(
+            (self.window_width, self.window_height)
+        )
+        self.scene = MenuScene(self, 'Арканоид')
+        self.keys_pressed = None
+        self.is_running = True
+        self.clock = pygame.time.Clock()
+
+    def main_loop(self) -> None:
+        '''
+        Главный цикл игры:
+            сбор событий
+            обновление объектов
+            рендер
+            ожидание тика FPS
+        '''
+        while self.is_running:
+            self.scene.handle_events()
+            self.scene.update()
+            self.scene.render()
+            self.clock.tick(config.FPS)
+        pygame.quit()
+
+
+if __name__ == '__main__':
+    game = Game()
+    game.main_loop()
+
+# End of C:\Users\Me\Desktop\python_dev\arcanoid\main.py content:
+
+# Folowing code is C:\Users\Me\Desktop\python_dev\arcanoid\racket.py content:
+
+from abc import ABC, abstractmethod
+import config
+import pygame
+
+
+class Racket(ABC, pygame.sprite.Sprite):
+    @abstractmethod
+    def __init__(
+            self,
+            center: tuple,
+            scene,
+    ):
+        super().__init__()
+        self.scene = scene
+        self.center = center
+        self.color = config.WHITE
+        self.speed = 10
+        self.image = pygame.Surface(
+            (
+                self.scene.tile_width * 2,
+                self.scene.tile_height // 2,
+            )
+        )
+        self.image.fill(self.color)
+        self.rect = self.image.get_rect()
+        self.goto_start()
+        self.direction = 0
+        self.scene.all_sprites.add(self)
+        self.scene.all_rackets.add(self)
+
+    def goto_start(self):
+        self.rect.center = self.center
+
+    def move(self):
+        '''двигает ракетку'''
+        pass
+
+    def collide_borders(self):
+        if self.rect.right > self.scene.game.window_width:
+            self.rect.right = self.scene.game.window_width
+
+        elif self.rect.left < 0:
+            self.rect.left = 0
+
+    def update(self):
+        self.move()
+        self.collide_borders()
+
+
+class RacketManual(Racket):
+    def __init__(self, center, key_left, key_right, scene):
+        super().__init__(center, scene)
+        self.key_left = key_left
+        self.key_right = key_right
+
+    def move(self):
+        if not self.scene.keys_pressed:
+            self.direction = 0
+            return
+
+        if self.scene.keys_pressed[self.key_right]:
+            self.rect.x += self.speed
+            self.direction = 1
+        elif self.scene.keys_pressed[self.key_left]:
+            self.rect.x -= self.speed
+            self.direction = -1
+
+# End of C:\Users\Me\Desktop\python_dev\arcanoid\racket.py content:
+
+# Folowing code is C:\Users\Me\Desktop\python_dev\arcanoid\scene.py content:
+
+import pygame
+from abc import ABC, abstractmethod
+import config
+from ball import Ball
+from racket import RacketManual
+from hud import Hud
+from block import Block
+
+
+class Scene(ABC):
+    '''Игровая сцена'''
+    @abstractmethod
+    def __init__(self, game):
+        self.game = game
+        self.font_size = self.game.font_size
+        self.keys_pressed = None
+        self.all_sprites = pygame.sprite.Group()
+        self.tile_width = self.game.window_width // config.BLOCKS_IN_ROW
+        self.tile_height = self.tile_width // 2
+
+    def handle_events(self):
+        '''Обрабатывает события'''
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.game.is_running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.game.is_running = False
+
+        self.keys_pressed = pygame.key.get_pressed()
+
+    def update(self):
+        self.all_sprites.update()
+
+    def render(self):
+        pass
+
+
+class GameplayScene(Scene):
+    '''Сцена игрового процесса'''
+    def __init__(self, game):
+        super().__init__(game)
+        self.sounds = {
+            'gameover': pygame.mixer.Sound(
+                config.SOUNDS_DIR / 'gameover.wav'
+            ),
+        }
+        self.all_rackets = pygame.sprite.Group()
+        racket_center = (
+            int(self.game.window_width // 2),
+            int(self.game.window_height * 0.9),
+        )
+
+        self.racket = RacketManual(
+            racket_center,
+            pygame.K_a,
+            pygame.K_d,
+            self
+        )
+
+        self.ball = Ball(self, self.game.is_sound)
+
+        Hud(
+            int(self.game.window_width * 0.1),
+            int(self.game.window_height * 0.05),
+            self,
+            lambda: self.ball.score,
+            'очки',
+            self.font_size
+        )
+
+        Hud(
+            int(self.game.window_width * 0.9),
+            int(self.game.window_height * 0.05),
+            self,
+            lambda: self.ball.hp,
+            'жизни',
+            self.font_size
+        )
+
+        self.all_blocks = pygame.sprite.Group()
+        self.make_blocks()
+
+        self.all_drops = pygame.sprite.Group()
+
+    def make_blocks(self):
+        '''Создает блоки'''
+        y = self.tile_height * 2
+        for row_index in range(config.ROWS_OF_BLOCKS):
+            x = 0
+            for _ in range(config.BLOCKS_IN_ROW):
+                Block(
+                    self,
+                    (x, y),
+                    config.BLOCK_COLORS[row_index % len(config.BLOCK_COLORS)],
+                )
+                x += self.tile_width
+            y += self.tile_height
+
+    def render(self):
+        '''Отрисовывает объекты на экране'''
+        self.game.screen.fill(config.BLACK)
+        if config.IS_DEBUG:
+            self.draw_lines()
+        self.all_sprites.draw(self.game.screen)
+        pygame.display.flip()
+
+    def draw_lines(self):
+        pygame.draw.line(
+            self.game.screen,
+            config.GREEN,
+            (0, self.game.window_height // 2),
+            (self.game.window_width, self.game.window_height // 2),
+            5,
+        )
+        pygame.draw.line(
+            self.game.screen,
+            config.WHITE,
+            (self.game.window_width // 2, 0),
+            (self.game.window_width // 2, self.game.window_height),
+            5,
+        )
+
+    def loose(self):
+        if self.game.is_sound:
+            # FIXME: Этот звук почти не слышкно из-за звука потери мяча
+            self.sounds['gameover'].play()
+        self.game.scene = MenuScene(self.game, 'Проиграл')
+
+    def win(self):
+        # TODO: сыграть звук победы, загрузить следующий уровень
+        self.game.scene = MenuScene(self.game, 'Выиграл')
+
+
+class MenuScene(Scene):
+    '''Сцена меню'''
+    def __init__(self, game, title: str):
+        super().__init__(game)
+        MenuLines(
+            self,
+            self.font_size,
+            title,
+            'ENTER - новая игра',
+            'ESC - выход',
+        )
+
+    def handle_events(self):
+        super().handle_events()
+        if self.keys_pressed[pygame.K_RETURN]:
+            self.game.scene = GameplayScene(self.game)
+
+    def render(self):
+        self.game.screen.fill(config.BLACK)
+        self.all_sprites.draw(self.game.screen)
+        pygame.display.flip()
+
+
+class MenuLines:
+    # TODO: рисовать линии на отдельной поверхности
+    def __init__(self, scene, font_size, title, *lines):
+        x = scene.game.window_width // 2
+        y = font_size * 5
+        title = TextLine(title, (x, y), font_size * 2)  # заголовок меню
+        scene.all_sprites.add(title)
+        y += font_size * 5
+        for line in lines:  # пункты меню
+            menu_line = TextLine(line, (x, y), font_size)
+            scene.all_sprites.add(menu_line)
+            y += font_size * 2
+
+
+class TextLine(pygame.sprite.Sprite):
+    def __init__(self, text_line: str, coords: tuple, font_size):
+        super().__init__()
+        self.font = pygame.font.Font(config.MENU_FONT, font_size)
+        self.image = self.font.render(text_line, True, config.MENU_COLOR)
+        self.rect = self.image.get_rect()
+        self.rect.center = coords
+
+# End of C:\Users\Me\Desktop\python_dev\arcanoid\scene.py content:
+
+# Folowing code is C:\Users\Me\Desktop\python_dev\arcanoid\sound_device_test.py content:
+
+'''
+Проблема 1:
+pygame.init() инициализирует ВСЕ модули, в том числе - микшер;
+если в ОС нет АКТИВНЫХ устройств, то инициализация занимает много времени
+
+Проблема 2:
+если в ОС нет АКТИВНЫХ устройств, то микшер не будет инициализирован,
+и при попытке сыграть звук будет ошибка
+pygame.error: WASAPI can't find requested audio endpoint: Element not found.
+
+Решение обеих:
+инициализировать модули по отдельности;
+перед инициализацией микшера проверить, может ли ОС проиграть звук
+'''
+
+import pyaudio
+
+
+def is_sound() -> bool:
+    p = pyaudio.PyAudio()
+    try:
+        stream = p.open(
+            format=pyaudio.paInt16,
+            channels=1,
+            rate=44100,
+            output=True
+        )
+        stream.close()
+        return True
+    except OSError:
+        return False
+    finally:
+        p.terminate()
+
+# End of C:\Users\Me\Desktop\python_dev\arcanoid\sound_device_test.py content:
+

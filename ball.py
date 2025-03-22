@@ -5,20 +5,20 @@ import math
 
 class Ball(pygame.sprite.Sprite):
     '''Мяч'''
-    def __init__(self, scene, is_sound):
+    def __init__(self, scene, color: tuple, is_sound: bool):
         super().__init__()
         self.scene = scene
+        self.color = color
         self.is_sound = is_sound
         self.velocity_x = 0
         self.velocity_y = 0
         self.angle = 0
-        self.color = config.GREEN
         self.speed = 10
         self.score = 0
         self.hp = 3
 
-        width = int(self.scene.tile_size * 0.3)
-        height = int(self.scene.tile_size * 0.3)
+        width = int(self.scene.tile_height * 0.3)
+        height = int(self.scene.tile_height * 0.3)
 
         self.image = pygame.Surface((width, height))
         self.image.fill(self.color)
@@ -80,9 +80,9 @@ class Ball(pygame.sprite.Sprite):
         collision_point = self.rect.centerx - racket_hit.rect.left
         racket_width = racket_hit.rect.width
         if collision_point < racket_width / 3:
-            self.angle = -30
+            self.angle = -15
         elif collision_point > 2 * racket_width / 3:
-            self.angle = 30
+            self.angle = 15
         else:
             self.angle = 0
         self.rect.bottom = racket_hit.rect.top - 1  # отлепить мяч от ракетки

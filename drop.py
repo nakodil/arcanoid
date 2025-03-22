@@ -7,13 +7,14 @@ class Drop(pygame.sprite.Sprite):
         self.scene = scene
         self.color = color
         self.image = pygame.Surface(
-            (self.scene.tile_size, self.scene.tile_size)
+            (self.scene.tile_width, self.scene.tile_height)
         )
         self.image.fill(self.color)
         self.rect = self.image.get_rect()
         self.rect.topleft = coords
         self.scene.all_sprites.add(self)
         self.scene.all_drops.add(self)
+        self.bonus = 10
         self.speed = 5
 
     def move(self):
@@ -24,3 +25,12 @@ class Drop(pygame.sprite.Sprite):
 
     def update(self):
         self.move()
+        self.collide_rackets()
+
+    def collide_rackets(self):
+        rackets_hit = pygame.sprite.spritecollide(
+            self, self.scene.all_rackets, False
+        )
+        if rackets_hit:
+            self.kill()
+            self.scene.ball.score += self.bonus

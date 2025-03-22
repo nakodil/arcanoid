@@ -1,6 +1,5 @@
 import pygame
 from abc import ABC, abstractmethod
-import math
 import config
 from ball import Ball
 from racket import RacketManual
@@ -16,9 +15,8 @@ class Scene(ABC):
         self.font_size = self.game.font_size
         self.keys_pressed = None
         self.all_sprites = pygame.sprite.Group()
-        self.tile_size = int(
-            math.gcd(self.game.window_width, self.game.window_height) * 0.5
-        )
+        self.tile_width = self.game.window_width // config.BLOCKS_IN_ROW
+        self.tile_height = self.tile_width // 3
 
     def handle_events(self):
         '''Обрабатывает события'''
@@ -54,13 +52,14 @@ class GameplayScene(Scene):
         )
 
         self.racket = RacketManual(
+            self,
             racket_center,
+            config.RACKETS_COLOR,
             pygame.K_a,
             pygame.K_d,
-            self
         )
 
-        self.ball = Ball(self, self.game.is_sound)
+        self.ball = Ball(self, config.BALL_COLOR, self.game.is_sound)
 
         Hud(
             int(self.game.window_width * 0.1),
@@ -87,17 +86,17 @@ class GameplayScene(Scene):
 
     def make_blocks(self):
         '''Создает блоки'''
-        y = self.tile_size * 2
+        y = int(self.game.window_height * 0.15)
         for row_index in range(config.ROWS_OF_BLOCKS):
             x = 0
-            for _ in range(self.game.window_width // self.tile_size):
+            for _ in range(config.BLOCKS_IN_ROW):
                 Block(
                     self,
                     (x, y),
                     config.BLOCK_COLORS[row_index % len(config.BLOCK_COLORS)],
                 )
-                x += self.tile_size
-            y += self.tile_size
+                x += self.tile_width
+            y += self.tile_height
 
     def render(self):
         '''Отрисовывает объекты на экране'''

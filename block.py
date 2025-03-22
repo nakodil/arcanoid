@@ -11,7 +11,7 @@ class Block(pygame.sprite.Sprite):
         self.coords = coords
         self.color = color
         self.image = pygame.Surface(
-            (self.scene.tile_size, self.scene.tile_size)
+            (self.scene.tile_width, self.scene.tile_height)
         )
         self.image.fill(self.color)
         self.rect = self.image.get_rect()
@@ -20,11 +20,18 @@ class Block(pygame.sprite.Sprite):
         self.scene.all_blocks.add(self)
         self.bonus = 1
 
+        pygame.draw.rect(
+            self.image,
+            config.WHITE,
+            self.image.get_rect(),
+            1
+        )
+
     def destroy(self):
         self.scene.ball.score += self.bonus
         self.kill()
         if not self.scene.all_blocks:
             self.scene.win()
             return
-        if random.randint(1, 1) == 1:  # TODO: fix chance
+        if random.randint(1, 10) == 1:  # TODO: fix chance
             Drop(self.scene, self.coords, config.DROP_COLOR)

@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-import config
 import pygame
 
 
@@ -7,18 +6,19 @@ class Racket(ABC, pygame.sprite.Sprite):
     @abstractmethod
     def __init__(
             self,
-            center: tuple,
             scene,
+            center: tuple,
+            color: tuple,
     ):
         super().__init__()
         self.scene = scene
         self.center = center
-        self.color = config.WHITE
+        self.color = color
         self.speed = 10
         self.image = pygame.Surface(
             (
-                self.scene.tile_size * 2,
-                int(self.scene.tile_size * 0.3),
+                self.scene.tile_width,
+                self.scene.tile_height // 2,
             )
         )
         self.image.fill(self.color)
@@ -48,8 +48,8 @@ class Racket(ABC, pygame.sprite.Sprite):
 
 
 class RacketManual(Racket):
-    def __init__(self, center, key_left, key_right, scene):
-        super().__init__(center, scene)
+    def __init__(self, scene, center, color, key_left, key_right):
+        super().__init__(scene, center, color)
         self.key_left = key_left
         self.key_right = key_right
 
