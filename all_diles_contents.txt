@@ -7,14 +7,14 @@ import math
 
 class Ball(pygame.sprite.Sprite):
     '''Мяч'''
-    def __init__(self, scene, is_sound):
+    def __init__(self, scene, color: tuple, is_sound: bool):
         super().__init__()
         self.scene = scene
+        self.color = color
         self.is_sound = is_sound
         self.velocity_x = 0
         self.velocity_y = 0
         self.angle = 0
-        self.color = config.GREEN
         self.speed = 10
         self.score = 0
         self.hp = 3
@@ -82,9 +82,9 @@ class Ball(pygame.sprite.Sprite):
         collision_point = self.rect.centerx - racket_hit.rect.left
         racket_width = racket_hit.rect.width
         if collision_point < racket_width / 3:
-            self.angle = -30
+            self.angle = -15
         elif collision_point > 2 * racket_width / 3:
-            self.angle = 30
+            self.angle = 15
         else:
             self.angle = 0
         self.rect.bottom = racket_hit.rect.top - 1  # отлепить мяч от ракетки
@@ -149,6 +149,13 @@ class Block(pygame.sprite.Sprite):
         self.scene.all_blocks.add(self)
         self.bonus = 1
 
+        pygame.draw.rect(
+            self.image,
+            config.WHITE,
+            self.image.get_rect(),
+            1
+        )
+
     def destroy(self):
         self.scene.ball.score += self.bonus
         self.kill()
@@ -156,7 +163,7 @@ class Block(pygame.sprite.Sprite):
             self.scene.win()
             return
         if random.randint(1, 10) == 1:  # TODO: fix chance
-            Drop(self.scene, self.coords, config.DROP_COLOR)
+            Drop(self.scene, self.rect.center, config.DROP_COLOR)
 
 # End of C:\Users\Me\Desktop\python_dev\arcanoid\block.py content:
 
@@ -164,26 +171,10 @@ class Block(pygame.sprite.Sprite):
 
 from pathlib import Path
 
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
-YELLOW = (255, 255, 0)
-CYAN = (0, 255, 255)
-MAGENTA = (255, 0, 255)
-PINK = (255, 20, 147)
-
-BLOCK_COLORS = (
-    RED,
-    GREEN,
-    BLUE,
-    YELLOW,
-    CYAN,
-    MAGENTA,
-)
-BONUS_BLOCK_COLOR = RED
-DROP_COLOR = PINK
+IS_DEBUG = False
+FPS = 60
+ROWS_OF_BLOCKS = 6
+BLOCKS_IN_ROW = 13
 
 BASE_DIR = Path(__file__).resolve().parent
 ASSETS_DIR = BASE_DIR / 'assets'
@@ -191,16 +182,34 @@ SOUNDS_DIR = ASSETS_DIR / 'sounds'
 FONTS_DIR = ASSETS_DIR / 'fonts'
 
 MENU_FONT = FONTS_DIR / 'PressStart2P-Regular.ttf'
-MENU_COLOR = WHITE
-
 HUD_FONT = FONTS_DIR / 'PressStart2P-Regular.ttf'
+
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+BLUE = (0, 0, 174)
+GREY = (157, 157, 157)
+YELLOW = (255, 255, 0)
+RED = (255, 0, 0)
+CYAN = (0, 112, 255)
+MAGENTA = (255, 0, 255)
+GREEN = (0, 255, 0)
+ORANGE = (255, 165, 0)
+
+BLOCK_COLORS = (
+    GREY,
+    RED,
+    YELLOW,
+    CYAN,
+    MAGENTA,
+    GREEN,
+)
+
+BG_COLOR = BLUE
+MENU_COLOR = WHITE
 HUD_COLOR = WHITE
-
-ROWS_OF_BLOCKS = 6
-BLOCKS_IN_ROW = 21
-
-IS_DEBUG = False
-FPS = 60
+BALL_COLOR = WHITE
+RACKETS_COLOR = WHITE
+DROP_COLOR = ORANGE
 
 # End of C:\Users\Me\Desktop\python_dev\arcanoid\config.py content:
 
@@ -210,16 +219,16 @@ import pygame
 
 
 class Drop(pygame.sprite.Sprite):
-    def __init__(self, scene, coords: tuple, color: tuple):
+    def __init__(self, scene, center_coords: tuple, color: tuple):
         super().__init__()
         self.scene = scene
         self.color = color
         self.image = pygame.Surface(
-            (self.scene.tile_width, self.scene.tile_height)
+            (self.scene.tile_height, self.scene.tile_height)
         )
         self.image.fill(self.color)
         self.rect = self.image.get_rect()
-        self.rect.topleft = coords
+        self.rect.center = center_coords
         self.scene.all_sprites.add(self)
         self.scene.all_drops.add(self)
         self.bonus = 10
@@ -347,7 +356,6 @@ if __name__ == '__main__':
 # Folowing code is C:\Users\Me\Desktop\python_dev\arcanoid\racket.py content:
 
 from abc import ABC, abstractmethod
-import config
 import pygame
 
 
@@ -355,17 +363,18 @@ class Racket(ABC, pygame.sprite.Sprite):
     @abstractmethod
     def __init__(
             self,
-            center: tuple,
             scene,
+            center: tuple,
+            color: tuple,
     ):
         super().__init__()
         self.scene = scene
         self.center = center
-        self.color = config.WHITE
+        self.color = color
         self.speed = 10
         self.image = pygame.Surface(
             (
-                self.scene.tile_width * 2,
+                self.scene.tile_width,
                 self.scene.tile_height // 2,
             )
         )
@@ -396,8 +405,8 @@ class Racket(ABC, pygame.sprite.Sprite):
 
 
 class RacketManual(Racket):
-    def __init__(self, center, key_left, key_right, scene):
-        super().__init__(center, scene)
+    def __init__(self, scene, center, color, key_left, key_right):
+        super().__init__(scene, center, color)
         self.key_left = key_left
         self.key_right = key_right
 
@@ -435,7 +444,7 @@ class Scene(ABC):
         self.keys_pressed = None
         self.all_sprites = pygame.sprite.Group()
         self.tile_width = self.game.window_width // config.BLOCKS_IN_ROW
-        self.tile_height = self.tile_width // 2
+        self.tile_height = self.tile_width // 3
 
     def handle_events(self):
         '''Обрабатывает события'''
@@ -471,13 +480,14 @@ class GameplayScene(Scene):
         )
 
         self.racket = RacketManual(
+            self,
             racket_center,
+            config.RACKETS_COLOR,
             pygame.K_a,
             pygame.K_d,
-            self
         )
 
-        self.ball = Ball(self, self.game.is_sound)
+        self.ball = Ball(self, config.BALL_COLOR, self.game.is_sound)
 
         Hud(
             int(self.game.window_width * 0.1),
@@ -504,7 +514,7 @@ class GameplayScene(Scene):
 
     def make_blocks(self):
         '''Создает блоки'''
-        y = self.tile_height * 2
+        y = int(self.game.window_height * 0.15)
         for row_index in range(config.ROWS_OF_BLOCKS):
             x = 0
             for _ in range(config.BLOCKS_IN_ROW):
@@ -518,7 +528,7 @@ class GameplayScene(Scene):
 
     def render(self):
         '''Отрисовывает объекты на экране'''
-        self.game.screen.fill(config.BLACK)
+        self.game.screen.fill(config.BG_COLOR)
         if config.IS_DEBUG:
             self.draw_lines()
         self.all_sprites.draw(self.game.screen)
@@ -569,23 +579,29 @@ class MenuScene(Scene):
             self.game.scene = GameplayScene(self.game)
 
     def render(self):
-        self.game.screen.fill(config.BLACK)
+        self.game.screen.fill(config.BG_COLOR)
         self.all_sprites.draw(self.game.screen)
         pygame.display.flip()
 
 
 class MenuLines:
-    # TODO: рисовать линии на отдельной поверхности
     def __init__(self, scene, font_size, title, *lines):
-        x = scene.game.window_width // 2
-        y = font_size * 5
-        title = TextLine(title, (x, y), font_size * 2)  # заголовок меню
-        scene.all_sprites.add(title)
-        y += font_size * 5
-        for line in lines:  # пункты меню
-            menu_line = TextLine(line, (x, y), font_size)
+        # Calculate the total height of all text lines
+        total_height = (len(lines) + 1) * font_size * 2  # +1 for the title
+        start_y = (scene.game.window_height - total_height) // 2  # Vertical center
+
+        # Center the title
+        title_x = scene.game.window_width // 2
+        title_y = start_y
+        title_line = TextLine(title, (title_x, title_y), font_size * 2)  # Title font size
+        scene.all_sprites.add(title_line)
+
+        # Center the menu lines below the title
+        y = title_y + font_size * 3  # Add some spacing after the title
+        for line in lines:
+            menu_line = TextLine(line, (title_x, y), font_size)
             scene.all_sprites.add(menu_line)
-            y += font_size * 2
+            y += font_size * 2  # Add spacing between lines
 
 
 class TextLine(pygame.sprite.Sprite):

@@ -34,4 +34,4 @@ class Block(pygame.sprite.Sprite):
             self.scene.win()
             return
         if random.randint(1, 10) == 1:  # TODO: fix chance
-            Drop(self.scene, self.coords, config.DROP_COLOR)
+            Drop(self.scene, self.rect.center, config.DROP_COLOR)

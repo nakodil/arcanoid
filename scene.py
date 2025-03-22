@@ -100,7 +100,7 @@ class GameplayScene(Scene):
 
     def render(self):
         '''Отрисовывает объекты на экране'''
-        self.game.screen.fill(config.BLACK)
+        self.game.screen.fill(config.BG_COLOR)
         if config.IS_DEBUG:
             self.draw_lines()
         self.all_sprites.draw(self.game.screen)
@@ -134,46 +134,53 @@ class GameplayScene(Scene):
 
 
 class MenuScene(Scene):
-    '''Сцена меню'''
     def __init__(self, game, title: str):
         super().__init__(game)
-        MenuLines(
-            self,
-            self.font_size,
-            title,
+        self.title = title
+        self.menu_options = [
             'ENTER - новая игра',
             'ESC - выход',
+        ]
+        self.font_size = self.game.font_size
+        self.render_menu()
+
+    def render_menu(self):
+        '''Рисует все меню в центре экрана'''
+        total_height = (len(self.menu_options) + 1) * self.font_size * 2
+        start_y = (self.game.window_height - total_height) // 2
+
+        # заголовок
+        self.render_text(
+            self.title,
+            (self.game.window_width // 2, start_y),
+            self.font_size * 2
         )
 
+        # опции
+        y = start_y + self.font_size * 3  # отступ от заголовка
+        for option in self.menu_options:
+            self.render_text(
+                option, (self.game.window_width // 2, y), self.font_size
+            )
+            y += self.font_size * 2  # межстрочный отступ
+
+    def render_text(self, text: str, coords: tuple, font_size: int):
+        '''Рисует одну строчку текста'''
+        font = pygame.font.Font(config.MENU_FONT, font_size)
+        text_surface = font.render(text, True, config.MENU_COLOR)
+        text_rect = text_surface.get_rect(center=coords)
+        text_sprite = pygame.sprite.Sprite()
+        text_sprite.image = text_surface
+        text_sprite.rect = text_rect
+        self.all_sprites.add(text_sprite)
+
     def handle_events(self):
+        '''Реагирует на события в меню'''
         super().handle_events()
-        if self.keys_pressed[pygame.K_RETURN]:
-            self.game.scene = GameplayScene(self.game)
+        if self.keys_pressed and self.keys_pressed[pygame.K_RETURN]:
+            self.game.scene = GameplayScene(self.game)  # новая игра
 
     def render(self):
-        self.game.screen.fill(config.BLACK)
+        self.game.screen.fill(config.BG_COLOR)
         self.all_sprites.draw(self.game.screen)
         pygame.display.flip()
-
-
-class MenuLines:
-    # TODO: рисовать линии на отдельной поверхности
-    def __init__(self, scene, font_size, title, *lines):
-        x = scene.game.window_width // 2
-        y = font_size * 5
-        title = TextLine(title, (x, y), font_size * 2)  # заголовок меню
-        scene.all_sprites.add(title)
-        y += font_size * 5
-        for line in lines:  # пункты меню
-            menu_line = TextLine(line, (x, y), font_size)
-            scene.all_sprites.add(menu_line)
-            y += font_size * 2
-
-
-class TextLine(pygame.sprite.Sprite):
-    def __init__(self, text_line: str, coords: tuple, font_size):
-        super().__init__()
-        self.font = pygame.font.Font(config.MENU_FONT, font_size)
-        self.image = self.font.render(text_line, True, config.MENU_COLOR)
-        self.rect = self.image.get_rect()
-        self.rect.center = coords

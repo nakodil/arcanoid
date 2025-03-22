@@ -2,16 +2,16 @@ import pygame
 
 
 class Drop(pygame.sprite.Sprite):
-    def __init__(self, scene, coords: tuple, color: tuple):
+    def __init__(self, scene, center_coords: tuple, color: tuple):
         super().__init__()
         self.scene = scene
         self.color = color
         self.image = pygame.Surface(
-            (self.scene.tile_width, self.scene.tile_height)
+            (self.scene.tile_height, self.scene.tile_height)
         )
         self.image.fill(self.color)
         self.rect = self.image.get_rect()
-        self.rect.topleft = coords
+        self.rect.center = center_coords
         self.scene.all_sprites.add(self)
         self.scene.all_drops.add(self)
         self.bonus = 10
