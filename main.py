@@ -14,6 +14,9 @@ class Game:
         self.is_sound = sound_device_test.is_sound()
         if self.is_sound:
             pygame.mixer.init()
+            pygame.mixer.music.load(config.SOUNDS_DIR / 'music.wav')
+            pygame.mixer.music.set_volume(0.3)
+            pygame.mixer.music.play(loops=-1)
 
         # FIXME: использовать главный дисплей, если их несколько
         display_info = pygame.display.Info()
