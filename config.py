@@ -8,6 +8,7 @@ BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
 CYAN = (0, 255, 255)
 MAGENTA = (255, 0, 255)
+PINK = (255, 20, 147)
 
 BLOCK_COLORS = (
     RED,
@@ -18,6 +19,7 @@ BLOCK_COLORS = (
     MAGENTA,
 )
 BONUS_BLOCK_COLOR = RED
+DROP_COLOR = PINK
 
 BASE_DIR = Path(__file__).resolve().parent
 ASSETS_DIR = BASE_DIR / 'assets'

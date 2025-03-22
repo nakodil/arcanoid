@@ -1,4 +1,4 @@
-# Звуки с https://sfxr.me/
+# Звуки с https://sfbgames.itch.io/chiptone
 import pygame
 import sound_device_test
 import config

@@ -42,6 +42,11 @@ class GameplayScene(Scene):
     '''Сцена игрового процесса'''
     def __init__(self, game):
         super().__init__(game)
+        self.sounds = {
+            'gameover': pygame.mixer.Sound(
+                config.SOUNDS_DIR / 'gameover.wav'
+            ),
+        }
         self.all_rackets = pygame.sprite.Group()
         racket_center = (
             int(self.game.window_width // 2),
@@ -77,6 +82,8 @@ class GameplayScene(Scene):
 
         self.all_blocks = pygame.sprite.Group()
         self.make_blocks()
+
+        self.all_drops = pygame.sprite.Group()
 
     def make_blocks(self):
         '''Создает блоки'''
@@ -117,9 +124,13 @@ class GameplayScene(Scene):
         )
 
     def loose(self):
+        if self.game.is_sound:
+            # FIXME: Этот звук почти не слышкно из-за звука потери мяча
+            self.sounds['gameover'].play()
         self.game.scene = MenuScene(self.game, 'Проиграл')
 
     def win(self):
+        # TODO: сыграть звук победы, загрузить следующий уровень
         self.game.scene = MenuScene(self.game, 'Выиграл')
 
 
@@ -150,13 +161,14 @@ class MenuLines:
     # TODO: рисовать линии на отдельной поверхности
     def __init__(self, scene, font_size, title, *lines):
         x = scene.game.window_width // 2
-        y = 100
-        title = TextLine(title, (x, y), font_size)  # заголовок меню
+        y = font_size * 5
+        title = TextLine(title, (x, y), font_size * 2)  # заголовок меню
         scene.all_sprites.add(title)
+        y += font_size * 5
         for line in lines:  # пункты меню
-            y += 100  # TODO: рассчитать отступ относительно размера шрифта
             menu_line = TextLine(line, (x, y), font_size)
             scene.all_sprites.add(menu_line)
+            y += font_size * 2
 
 
 class TextLine(pygame.sprite.Sprite):

@@ -65,23 +65,30 @@ class Ball(pygame.sprite.Sprite):
 
     def collide_rackets(self) -> None:
         '''
-        Столкновения с ракетками
-        FIXME: Неправильный отскок от ракетки,
-            мяч можно допинать до горизонтального полета. Вот правила:
-            If the ball hits the center of the paddle, it bounces straight up.
-            If it hits the left side, it bounces at an angle to the left.
-            If it hits the right side, it bounces at an angle to the right.
+        Столкновения с ракетками:
+        мяч столкнулся с левой третью ракетки - поворачивается влево;
+        мяч столкнулся с правой третью ракетки - поворачивается вправо;
+        мяч столкнулся с центральной третью ракетки - поворачивается вверх.
         '''
         rackets_hit = pygame.sprite.spritecollide(
             self, self.scene.all_rackets, False
         )
-        if rackets_hit:
-            racket_hit = rackets_hit[0]
-            self.angle = (180 - self.angle) % 360
-            self.angle += 15 * racket_hit.direction
-            self.rect.bottom = racket_hit.rect.top
-            if self.is_sound:
-                self.sounds['collide'].play()
+        if not rackets_hit:
+            return
+
+        racket_hit = rackets_hit[0]
+        collision_point = self.rect.centerx - racket_hit.rect.left
+        racket_width = racket_hit.rect.width
+        if collision_point < racket_width / 3:
+            self.angle = -30
+        elif collision_point > 2 * racket_width / 3:
+            self.angle = 30
+        else:
+            self.angle = 0
+        self.rect.bottom = racket_hit.rect.top - 1  # отлепить мяч от ракетки
+
+        if self.is_sound:
+            self.sounds['collide'].play()
 
     def collide_blocks(self) -> None:
         '''Столкновения с блоками'''
